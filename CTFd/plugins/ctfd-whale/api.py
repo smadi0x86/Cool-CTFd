@@ -81,7 +81,6 @@ class AdminContainers(Resource):
         except Exception as e:
             abort(500, str(e), success=False)
 
-
 @user_namespace.route("/container")
 class UserContainers(Resource):
     @staticmethod
@@ -91,20 +90,32 @@ class UserContainers(Resource):
         user_id = current_user.get_current_user().id
         challenge_id = request.args.get('challenge_id')
         container = DBContainer.get_current_containers(user_id=user_id, challenge_id=challenge_id)
+
         if not container:
             return {'success': True, 'data': {}}
+
         timeout = int(get_config("whale:docker_timeout", "3600"))
+
         if int(container.challenge_id) != int(challenge_id):
             return abort(403, f'Container started but not from this challenge ({container.challenge.name})', success=False)
 
-        container.start_time = datetime.strptime(container.start_time, "%Y-%m-%d %H:%M:%S.%f") # Fix for 403 forbidden when starting containers
-        #print(type(container.start_time))
+        # Ensure start_time is a datetime object
+        start_time = container.start_time
+        if isinstance(start_time, str):
+            try:
+                start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                # Fallback if microseconds are missing
+                start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+
+        remaining_time = timeout - (datetime.now() - start_time).seconds
+
         return {
             'success': True,
             'data': {
-                'lan_domain': str(user_id) + "-" + container.uuid,
+                'lan_domain': f"{user_id}-{container.uuid}",
                 'user_access': Router.access(container),
-                'remaining_time': timeout - (datetime.now() - container.start_time).seconds,
+                'remaining_time': max(remaining_time, 0),
             }
         }
 
