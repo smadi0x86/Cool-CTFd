@@ -68,7 +68,7 @@ Access the Whale Configuration page at `/plugins/ctfd-whale/admin/settings` and 
 - **Use SSL**: Unchecked
 
 #### Standalone Containers
-- **Auto Connect Network**: `ctfd_frp_containers`
+- **Auto Connect Network**: `cool-ctfd_frp_containers`
 - **Dns Setting**: `1.1.1.1`
 
 #### Grouped Containers
